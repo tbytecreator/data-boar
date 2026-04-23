@@ -51,6 +51,8 @@ If you sync the same tree to **Linux** (`~/pCloudDrive`) and **Windows** (**`P:`
 
 ## Hosts
 
+**Personas (coverage intent):** after you copy this tree, tag each row mentally with **[LAB_OP_HOST_PERSONAS.md](../../ops/LAB_OP_HOST_PERSONAS.md)** ([pt-BR](../../ops/LAB_OP_HOST_PERSONAS.pt_BR.md)) — e.g. T14 **ENT-like** (Podman, thin metal), Latitude **PRO** (Swarm + `uv`), Pi **edge soup**, mini-bt **bridge** (`completaoHealthUrl`, `curl`, light `--web`). Real aliases stay **only** here, not in public Markdown.
+
 | Role | Hostname (LAN)   | OS | Notes |
 | ---- | ---------------- | -- | ----- |
 | …    | …                | …  | …     |
