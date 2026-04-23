@@ -7,7 +7,17 @@
 - name: Install Podman (rootless containers)
   when: t14_install_podman | bool
   block:
-    - name: Install podman and OCI tooling
+    - name: Assert supported OS for t14_podman automation
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == "Debian" or ansible_distribution == "Void"
+        fail_msg: >-
+          t14_podman supports Debian family (apt) or Void Linux (xbps).
+          This host: ansible_os_family={{ ansible_os_family | default('unknown') }},
+          ansible_distribution={{ ansible_distribution | default('unknown') }}.
+
+    - name: Install podman and OCI tooling (Debian apt)
+      when: ansible_os_family == "Debian"
       ansible.builtin.apt:
         name:
           - podman
@@ -16,16 +26,73 @@
         state: present
         update_cache: true
 
-    - name: Install rootless dependencies (uidmap, slirp4netns, fuse-overlayfs)
+    - name: Install podman and OCI tooling (Void xbps, check mode dry-run)
+      when:
+        - ansible_distribution == "Void"
+        - ansible_check_mode
+      ansible.builtin.command:
+        argv: "{{ ['xbps-install', '-Syn'] + t14_podman_void_packages }}"
+      register: t14_void_podman_check
+      changed_when: >-
+        (t14_void_podman_check.stdout | default(''))
+        | regex_search('(?i)[1-9][0-9]*\\s+packages?\\s+will\\s+be\\s+installed')
+        is not none
+      failed_when: t14_void_podman_check.rc != 0
+
+    - name: Install podman and OCI tooling (Void xbps, apply)
+      when:
+        - ansible_distribution == "Void"
+        - not ansible_check_mode
+      ansible.builtin.command:
+        argv: "{{ ['xbps-install', '-Sy'] + t14_podman_void_packages }}"
+      register: t14_void_podman_apply
+      changed_when: >-
+        (t14_void_podman_apply.stdout | default(''))
+        | regex_search('(?i)[1-9][0-9]*\\s+packages?\\s+will\\s+be\\s+installed')
+        is not none
+      failed_when: t14_void_podman_apply.rc != 0
+
+    - name: Install rootless dependencies (uidmap, slirp4netns, fuse-overlayfs) (Debian apt)
+      when: ansible_os_family == "Debian"
       ansible.builtin.apt:
         name: "{{ t14_podman_rootless_packages }}"
         state: present
 
-    - name: Install podman-compose
-      when: t14_podman_install_compose | bool
+    - name: Install podman-compose (Debian apt)
+      when:
+        - ansible_os_family == "Debian"
+        - t14_podman_install_compose | bool
       ansible.builtin.apt:
         name: podman-compose
         state: present
+
+    - name: Install podman-compose (Void xbps, check mode dry-run)
+      when:
+        - ansible_distribution == "Void"
+        - t14_podman_install_compose | bool
+        - ansible_check_mode
+      ansible.builtin.command:
+        argv: [xbps-install, -Syn, podman-compose]
+      register: t14_void_compose_check
+      changed_when: >-
+        (t14_void_compose_check.stdout | default(''))
+        | regex_search('(?i)[1-9][0-9]*\\s+packages?\\s+will\\s+be\\s+installed')
+        is not none
+      failed_when: t14_void_compose_check.rc != 0
+
+    - name: Install podman-compose (Void xbps, apply)
+      when:
+        - ansible_distribution == "Void"
+        - t14_podman_install_compose | bool
+        - not ansible_check_mode
+      ansible.builtin.command:
+        argv: [xbps-install, -Sy, podman-compose]
+      register: t14_void_compose_apply
+      changed_when: >-
+        (t14_void_compose_apply.stdout | default(''))
+        | regex_search('(?i)[1-9][0-9]*\\s+packages?\\s+will\\s+be\\s+installed')
+        is not none
+      failed_when: t14_void_compose_apply.rc != 0
 
     # loginctl enable-linger must target the human login, not root (become) nor a stale ansible_user_id.
     - name: Resolve login for podman rootless linger
@@ -33,7 +100,7 @@
         t14_podman_linger_login: "{{ _pl }}"
       vars:
         _override: "{{ t14_operator_target_user | default('') | trim }}"
-        _sudo_u: "{{ ansible_env.SUDO_USER | default('') | trim }}"
+        _sudo_u: "{{ ansible_facts.get('ansible_env', {}).get('SUDO_USER', '') | trim }}"
         _fallback: "{{ ansible_user | default(ansible_user_id) }}"
         _pl: "{{ _override if (_override | length > 0) else (_sudo_u if (_sudo_u | length > 0) else _fallback) }}"
 
@@ -46,16 +113,20 @@
       when: t14_podman_linger_login == 'root'
 
     - name: Enable lingering for operator user (rootless containers survive logout)
-      when: t14_podman_linger_login != 'root'
+      when:
+        - t14_podman_linger_login != 'root'
+        - not ansible_check_mode
       ansible.builtin.command: loginctl enable-linger "{{ t14_podman_linger_login }}"
       changed_when: false
 
     - name: Verify podman binary (post-install)
+      when: not ansible_check_mode
       ansible.builtin.command: podman --version
       register: t14_podman_version_cmd
       changed_when: false
 
     - name: Report podman version
+      when: not ansible_check_mode
       ansible.builtin.debug:
         msg: "{{ t14_podman_version_cmd.stdout | default('') }}"
 

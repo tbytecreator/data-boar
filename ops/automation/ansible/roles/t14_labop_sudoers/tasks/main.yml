@@ -14,14 +14,20 @@
       # - Restrict to one script path + fixed arguments.
       # - Prefer removing this include when not actively collecting.
       #
+      # List BOTH /bin/bash and /usr/bin/bash: sudo matches argv[0] literally; Void and
+      # some layouts resolve `command -v bash` to /usr/bin/bash while operators still test with /bin/bash.
       Cmnd_Alias LABOP_HOST_REPORT = /bin/bash {{ t14_labop_repo_path }}/scripts/homelab-host-report.sh --privileged, \
-                                     /bin/bash {{ t14_labop_repo_path }}/scripts/homelab-host-report.sh --privileged --deep
+                                     /usr/bin/bash {{ t14_labop_repo_path }}/scripts/homelab-host-report.sh --privileged, \
+                                     /bin/bash {{ t14_labop_repo_path }}/scripts/homelab-host-report.sh --privileged --deep, \
+                                     /usr/bin/bash {{ t14_labop_repo_path }}/scripts/homelab-host-report.sh --privileged --deep
       #
       # Narrow Ansible Podman apply (same path discipline as homelab-host-report).
       # Invoked as: sudo -n /bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --apply
       #
       Cmnd_Alias LABOP_ANSIBLE_PODMAN = /bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --apply, \
-                                        /bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --check
+                                        /usr/bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --apply, \
+                                        /bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --check, \
+                                        /usr/bin/bash {{ t14_labop_repo_path }}/scripts/t14-ansible-labop-podman-apply.sh --check
       {{ t14_labop_sudoers_user }} ALL=(root) NOPASSWD: LABOP_HOST_REPORT, LABOP_ANSIBLE_PODMAN
   failed_when: false
 

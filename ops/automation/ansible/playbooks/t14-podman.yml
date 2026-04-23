@@ -1,5 +1,5 @@
 ---
-# Minimal Podman install for T14 (LMDE / Debian) — use when full baseline is too heavy
+# Minimal Podman install for T14 (LMDE / Debian) or Void (xbps) — use when full baseline is too heavy
 # or Docker CE is misconfigured but you need Podman for LAB completão.
 #
 # From T14 (inventory with localhost + connection=local):
