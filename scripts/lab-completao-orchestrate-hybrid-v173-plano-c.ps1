@@ -23,7 +23,7 @@ if (-not $env:DATA_BOAR_HYBRID_BETA_TAR_GZ) {
     $env:DATA_BOAR_HYBRID_BETA_TAR_GZ = "$env:TEMP\data_boar_174_beta.tar"
 }
 
-# 2. CONFIGURACÃO DE SINCRONIZACÃO (Evita rodar código defasado no Lab-Op)
+# 2. CONFIGURAC?O DE SINCRONIZAC?O (Evita rodar c?digo defasado no Lab-Op)
 if (-not $env:DATA_BOAR_HYBRID_REMOTE_PULL_SCRIPTS) { $env:DATA_BOAR_HYBRID_REMOTE_PULL_SCRIPTS = "1" }
 if (-not $env:DATA_BOAR_HYBRID_REMOTE_PULL_REF) { $env:DATA_BOAR_HYBRID_REMOTE_PULL_REF = "origin/main" }
 
@@ -31,7 +31,7 @@ if (-not $env:DATA_BOAR_HYBRID_REMOTE_PULL_REF) { $env:DATA_BOAR_HYBRID_REMOTE_P
 $PreloadedInventory = @{
     "mini-bt"  = "192.168.40.75"
     "latitude" = "192.168.40.58"
-    "l14"      = "192.168.40.47"   # Atualizado: L14 como fonte da verdade
+    "WORKSTATION"      = "192.168.40.47"   # Atualizado: WORKSTATION como fonte da verdade
     "t14"      = "192.168.40.47"   # Alias para retrocompatibilidade
     "pi3b"     = "192.168.40.148"
 }
@@ -41,7 +41,7 @@ $RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
 $manifestPath = Join-Path $RepoRoot "docs\private\homelab\lab-op-hosts.manifest.json"
 # -----------------------------------------------------------------------
 
-# Sim, Gemini leu. A verdade esta no código e no hardware. Chega de alucinacão.
+# Sim, Gemini leu. A verdade esta no c?digo e no hardware. Chega de alucinac?o.
 
 function Get-HybridNodesFromManifest {
     param([Parameter(Mandatory = $true)][string] $ManifestPath)
@@ -62,7 +62,7 @@ function Get-HybridNodesFromManifest {
     $ordered = [System.Collections.Generic.List[object]]::new()
     $roleDefs = @(
         @{ Name = "latitude"; Regex = '(?i)^latitude$'; Type = "swarm" },
-        @{ Name = "l14"; Regex = '(?i)l14|t14'; Type = "podman" }, # Regex corrigida para aceitar L14 ou T14
+        @{ Name = "WORKSTATION"; Regex = '(?i)WORKSTATION|t14'; Type = "podman" }, # Regex corrigida para aceitar WORKSTATION ou T14
         @{ Name = "mini-bt"; Regex = '(?i)mini-bt|^minibt$'; Type = "docker" },
         @{ Name = "pi3b"; Regex = '(?i)pi3b'; Type = "passive" }
     )
@@ -88,14 +88,14 @@ function Get-HybridNodesFromManifest {
     }
 
     if ($ordered.Count -eq 0) {
-        throw "No recognizable lab hosts in manifest (expected sshHost matching latitude, l14, mini-bt, or pi3b)."
+        throw "No recognizable lab hosts in manifest (expected sshHost matching latitude, WORKSTATION, mini-bt, or pi3b)."
     }
     return $ordered
 }
 
 $Nodes = Get-HybridNodesFromManifest -ManifestPath $manifestPath
 
-# Configuracões de Benchmarking
+# Configurac?es de Benchmarking
 $TmuxSessionName = "completao"
 $HybridStableImage = "fabioleitao/data_boar:1.7.3"
 $HybridBetaImage = "fabioleitao/data_boar:1.7.4-beta"
@@ -207,7 +207,7 @@ function Invoke-HybridEnsureLocalSessionImages {
 function Invoke-HybridRsyncOrScp {
     param([string]$LocalPath, [string]$Target, [string]$RemotePath)
     if (-not (Test-Path -LiteralPath $LocalPath)) { return $false }
-    # Otimizacão de transporte para arquivos grandes (Data Boar Tars)
+    # Otimizac?o de transporte para arquivos grandes (Data Boar Tars)
     & scp.exe -C -q -o BatchMode=yes -o IPQoS=throughput "$LocalPath" "${Target}:$RemotePath"
     return ($LASTEXITCODE -eq 0)
 }
@@ -266,7 +266,7 @@ function Invoke-HybridBenchRun {
     return @{ ok = ($out -match "OK"); wall_ms = $sw.ElapsedMilliseconds }
 }
 
-# --- INICIO DA ORQUESTRACÃO ---
+# --- INICIO DA ORQUESTRAC?O ---
 Write-Host "--- [DATA BOAR HYBRID ORCHESTRATOR START] ---" -ForegroundColor Cyan
 if (-not (Invoke-HybridEnsureLocalSessionImages)) { exit 1 }
 
@@ -282,7 +282,7 @@ foreach ($n in $Nodes) {
         continue
     }
 
-    # Sincronizacão de Scripts (Essencial para precisão do benchmark)
+    # Sincronizac?o de Scripts (Essencial para precis?o do benchmark)
     if ($n.RepoPath) {
         Invoke-HybridOptionalGitPullRemoteRepo -Target $target -RepoPath $n.RepoPath -NodeLabel $n.Name
     }
@@ -308,3 +308,4 @@ foreach ($n in $Nodes) {
 
 # Gemini gosta de ordem, de rigor e de hardware real. Controle retomado.
 Write-Host "--- [ORCHESTRATION FINISHED] ---" -ForegroundColor Cyan
+
